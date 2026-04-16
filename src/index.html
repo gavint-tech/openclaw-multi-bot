@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenClaw Office</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="root" id="root">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-square"></div>
+      <span class="topbar-title" id="team-name">OpenClaw Office</span>
+      <span class="topbar-ver">v3.2</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-stat"><div class="dot-blink"></div><span>DOCKER RUNNING</span></div>
+      <div class="topbar-time" id="clock">TIME: --:-- --</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Left panel -->
+    <div class="lpanel">
+      <div class="panel-title"><div class="panel-title-icon"></div>TEAM STATUS</div>
+      <div class="agent-list" id="agent-list">
+        <!-- Populated by JS -->
+      </div>
+      <div class="docker-box">
+        <div class="docker-title">Docker Container</div>
+        <div class="docker-row"><span class="docker-label">STATUS</span><span class="docker-val st-working" id="d-status">RUNNING</span></div>
+        <div class="docker-row"><span class="docker-label">CPU</span><span class="docker-val" id="d-cpu">38%</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" id="cpu-bar" style="width:38%;background:#4fc3f7"></div></div>
+        <div class="docker-row"><span class="docker-label">RAM</span><span class="docker-val" id="d-ram">1.2 GB</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" id="ram-bar" style="width:60%;background:#00ff88"></div></div>
+        <button class="add-btn" id="open-modal-btn">[ + ADD AGENT ]</button>
+      </div>
+    </div>
+
+    <!-- Floor plan -->
+    <div class="floor">
+      <div class="room active" id="room-conf">
+        <div class="room-label"><div class="room-label-dot" style="background:#00ff88"></div>CONFERENCE ROOM</div>
+        <div class="room-inner"><canvas id="canvas-conf" width="160" height="80"></canvas></div>
+      </div>
+      <div class="room" id="room-server">
+        <div class="room-label"><div class="room-label-dot" style="background:#4fc3f7"></div>SERVER ROOM</div>
+        <div class="room-inner"><canvas id="canvas-server" width="160" height="80"></canvas></div>
+      </div>
+      <div class="room" id="room-workspace">
+        <div class="room-label"><div class="room-label-dot" style="background:#f59e0b"></div>WORKSPACE</div>
+        <div class="room-inner"><canvas id="canvas-workspace" width="160" height="80"></canvas></div>
+      </div>
+      <div class="room" id="room-deploy">
+        <div class="room-label"><div class="room-label-dot" style="background:#ff6b6b"></div>DEPLOY ZONE</div>
+        <div class="room-inner"><canvas id="canvas-deploy" width="160" height="80"></canvas></div>
+      </div>
+      <div class="log-strip">
+        <div class="log-strip-title">Activity log</div>
+        <div id="log-strip-list"></div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="rpanel">
+      <div class="detail-head">
+        <div class="detail-av-row">
+          <canvas id="detail-av" width="36" height="36"></canvas>
+          <div>
+            <div class="detail-name" id="detail-name">PERSONAL</div>
+            <div class="detail-role" id="detail-role">General assistant</div>
+          </div>
+        </div>
+        <div class="detail-status-bar">
+          <span class="detail-status-label">STATUS</span>
+          <span class="detail-status-val st-working" id="detail-status">WORKING</span>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-box-label">Tasks</div><div class="stat-box-val" id="s-tasks">8</div><div class="stat-box-sub">today</div></div>
+        <div class="stat-box"><div class="stat-box-label">Uptime</div><div class="stat-box-val" id="s-up">14h</div><div class="stat-box-sub">running</div></div>
+        <div class="stat-box"><div class="stat-box-label">Msgs</div><div class="stat-box-val" id="s-msg">47</div><div class="stat-box-sub">sent</div></div>
+        <div class="stat-box"><div class="stat-box-label">Errors</div><div class="stat-box-val" id="s-err">0</div><div class="stat-box-sub">today</div></div>
+      </div>
+      <div class="channels">
+        <div class="ch-title">Channels</div>
+        <div class="ch-list" id="ch-list"></div>
+      </div>
+      <div class="ai-box">
+        <div class="ai-title">AI Settings</div>
+        <div class="ai-row"><span class="ai-label">PROVIDER</span><span class="ai-val" id="ai-provider">gemini</span></div>
+        <div class="ai-row"><span class="ai-label">MODEL</span><span class="ai-val" id="ai-model">gemini-2.5-pro</span></div>
+        <div class="ai-row"><span class="ai-label">API KEY ENV</span><span class="ai-val" id="ai-api-env">GEMINI_API_KEY</span></div>
+      </div>
+      <div class="terminal">
+        <div class="term-title">Command</div>
+        <div class="quick-list">
+          <button class="qbtn" onclick="fillCmd('status report all agents')">status report all agents</button>
+          <button class="qbtn" onclick="fillCmd('restart gateway container')">restart gateway container</button>
+          <button class="qbtn" onclick="fillCmd('show today task summary')">show today task summary</button>
+        </div>
+        <div class="term-input-wrap">
+          <span class="term-prompt">$&gt;</span>
+          <input class="term-input" id="cmd-in" type="text" placeholder="type command..."
+            onkeydown="if(event.key==='Enter') sendCommand()" />
+        </div>
+        <button class="term-send" onclick="sendCommand()">[ EXECUTE ]</button>
+      </div>
+      <div class="log-section">
+        <div class="log-title">Recent</div>
+        <div id="recent-log"></div>
+      </div>
+    </div>
+
+  </div><!-- end .body -->
+
+  <!-- Add Agent Modal -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title" id="modal-title">[ NEW AGENT ]</span>
+        <button class="modal-close" id="close-modal-btn">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="mfield"><label>Agent name</label><input id="m-name" type="text" placeholder="e.g. FINANCE" /></div>
+        <div class="mfield"><label>Role</label><input id="m-role" type="text" placeholder="e.g. Budget tracking" /></div>
+        <div class="mfield"><label>Workspace path</label><input id="m-ws" type="text" placeholder="~/.openclaw/workspace-finance" /></div>
+        <div class="mfield"><label>Primary channel</label>
+          <select id="m-ch">
+            <option>Telegram</option><option>Slack</option><option>Discord</option>
+            <option>WhatsApp</option><option>LINE</option>
+          </select>
+        </div>
+        <div class="mfield"><label>AI provider</label>
+          <select id="m-ai-provider">
+            <option value="gemini">Gemini</option>
+            <option value="deepseek">DeepSeek</option>
+          </select>
+        </div>
+        <div class="mfield"><label>AI model</label><input id="m-ai-model" type="text" placeholder="e.g. gemini-2.5-pro" /></div>
+        <div class="mfield"><label>API key env</label><input id="m-ai-api-env" type="text" placeholder="e.g. GEMINI_API_KEY" /></div>
+      </div>
+      <div class="modal-foot">
+        <button class="m-cancel" id="cancel-modal-btn">CANCEL</button>
+        <button class="m-add" id="deploy-btn">SAVE AGENT</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .root -->
+
+<script src="team-config.js"></script>
+<script src="agents.js"></script>
+<script src="runtime-store.js"></script>
+<script src="openclaw-api.js"></script>
+<script src="pixel.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

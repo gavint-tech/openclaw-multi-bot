@@ -1,0 +1,65 @@
+---
+description: Karpathy-inspired behavioral guidelines adapted for OpenClaw Office. Enforce disciplined thinking, simplicity, surgical edits, and goal-driven execution for this vanilla JS dashboard.
+alwaysApply: true
+---
+
+# Karpathy Guidelines for OpenClaw Office
+
+Use these guidelines on every task in this project. Favor caution over speed when the request is ambiguous or could affect multiple parts of the static dashboard.
+
+## Project Context
+
+- This project is a small static dashboard built with vanilla HTML, CSS, and JavaScript.
+- JavaScript in this codebase follows existing ES5-style patterns such as `var`, `function`, string concatenation, and browser globals.
+- The UI is served directly by nginx from `src/` with no bundler, framework, or build step in this repository.
+- `src/agents.js` holds seed data and log fixtures.
+- `src/app.js` controls UI interactions, selection state, modal behavior, logs, and dashboard boot.
+- `src/pixel.js` draws characters and rooms with the Canvas API.
+- `src/openclaw-api.js` wraps gateway communication in an IIFE-style WebSocket client.
+- Thai comments and mixed Thai-English documentation are normal in this repository. Preserve the existing voice unless the task explicitly asks otherwise.
+
+## 1. Think Before Coding
+
+- State assumptions explicitly before changing files when requirements, data flow, or UI behavior are unclear.
+- If there are multiple valid implementations, present the main options with tradeoffs instead of silently picking one.
+- Stop and ask when a change could affect browser globals, shared state, or interactions across `app.js`, `agents.js`, `pixel.js`, or `openclaw-api.js`.
+- Push back when a simpler approach fits the request better than a larger rewrite.
+- Do not introduce frameworks, module systems, or build tooling unless the user explicitly asks for them.
+
+## 2. Simplicity First
+
+- Write the minimum code that solves the requested problem.
+- Match the existing JavaScript style. Prefer `var`, `function`, and straightforward DOM code over new abstractions.
+- Avoid single-use helper layers, configuration systems, or generic utilities that this small dashboard does not need.
+- Keep rendering, data, and gateway logic in their existing places unless the task clearly requires a boundary change.
+- Do not add speculative error handling, extra states, or future-proofing for scenarios that are not part of the request.
+
+## 3. Surgical Changes
+
+- Touch only the files that are directly related to the requested outcome.
+- Match existing patterns such as browser globals, IIFE encapsulation, inline DOM construction, and Canvas drawing helpers.
+- Do not refactor adjacent code, restyle unrelated markup, rename symbols for taste, or rewrite comments that are outside the task.
+- If your change makes your own imports, variables, branches, or helper functions unused, clean those up.
+- If you notice unrelated dead code or broader cleanup opportunities, mention them separately instead of deleting them.
+
+## 4. Goal-Driven Execution
+
+- Turn each request into a short plan with clear verification steps before implementing.
+- For UI changes, define what should visibly change in the browser and which controls or panels should be affected.
+- For gateway or Docker-related changes, define what behavior should be observable after running the stack.
+- For bug fixes, prefer proving the bug is resolved with the smallest practical verification available in this project.
+- Use this format for multi-step tasks:
+
+```text
+1. [Step] -> verify: [check]
+2. [Step] -> verify: [check]
+3. [Step] -> verify: [check]
+```
+
+## Pre-Submission Checklist
+
+- Every changed line traces back to the user's request.
+- No new dependency, framework, or build step was added without approval.
+- Existing ES5-style conventions are preserved.
+- Existing roles of `agents.js`, `app.js`, `pixel.js`, and `openclaw-api.js` remain clear.
+- Success criteria and verification were stated before finishing.

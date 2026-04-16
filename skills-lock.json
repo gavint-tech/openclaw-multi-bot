@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "openclaw-secure-linux-cloud": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "computedHash": "405b7ea93f5de195fda67b26bb4d409fa76b1b7ef5d0b1809366e18e54b134e3"
+    }
+  }
+}
