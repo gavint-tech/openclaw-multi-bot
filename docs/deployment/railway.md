@@ -22,7 +22,8 @@ Mapping จาก repo ปัจจุบัน:
 
 - `docker-compose.yml` แยกเป็น 2 services บน Railway
 - `docker/Dockerfile.ui` ใช้ build UI service
-- `docker/nginx.railway.conf.template` ใช้ proxy `/ws` และ `/api/` ไปที่ gateway
+- `docker/nginx.railway.conf.template` ใช้ proxy `/ws`, `/api/`, และ `/gateway/` ไปที่ gateway
+- คู่มือตั้งค่า UI ↔ gateway (auth, `/v1/responses`, troubleshooting): [docs/ui-gateway-connection.md](../ui-gateway-connection.md)
 - `src/openclaw-api.js` จะ auto-detect `wss://<current-host>/ws` เมื่อไม่ใช่ `localhost`
 
 ## ข้อควรรู้ก่อนเริ่ม

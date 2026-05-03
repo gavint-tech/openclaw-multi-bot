@@ -6,6 +6,21 @@
 var modalMode = 'create';
 var editingAgentId = null;
 
+/** ช่องทางที่ UI ยังผูกจริงกับ gateway ไม่ได้ — ไม่แสดง LIVE หลอก */
+function channelUiStatus(channelName) {
+  var n = String(channelName || '');
+  if (n === 'Telegram' || n === 'WhatsApp' || n === 'LINE') {
+    return { label: 'CLI', cls: 'ch-cli', title: 'ผูกจริงผ่าน openclaw CLI (agents bind) — UI ยังไม่ส่ง token' };
+  }
+  if (n === 'Slack' || n === 'Discord') {
+    return { label: 'CONFIG', cls: 'ch-config', title: 'ตั้งค่าที่ gateway / ไฟล์ config' };
+  }
+  if (n === 'Web UI' || n === 'Internal') {
+    return { label: 'LOCAL', cls: 'ch-local', title: 'สถานะในเบราว์เซอร์' };
+  }
+  return { label: 'UI', cls: 'ch-ui', title: 'แสดงจาก team config' };
+}
+
 /* ─── Clock ─── */
 function updateClock() {
   var n = new Date();
@@ -93,10 +108,11 @@ function renderSelectedAgent() {
 
   chList = document.getElementById('ch-list');
   chList.innerHTML = ag.channels.map(function (c) {
+    var st = channelUiStatus(c.name);
     return '<div class="ch-item">' +
       '<div class="ch-dot" style="background:' + c.color + '"></div>' +
       '<span class="ch-name">' + c.name + '</span>' +
-      '<span class="ch-status">LIVE</span>' +
+      '<span class="ch-status ' + st.cls + '">' + st.label + '</span>' +
       '</div>';
   }).join('');
 
@@ -144,19 +160,127 @@ function fillCmd(text) {
   document.getElementById('cmd-in').focus();
 }
 
-function sendCommand() {
+function setCommandBusy(on) {
   var input = document.getElementById('cmd-in');
-  var val = input.value.trim();
-  if (!val) return;
+  var execBtn = document.querySelector('.term-send');
+  document.querySelectorAll('.quick-list .qbtn').forEach(function (btn) {
+    btn.disabled = !!on;
+  });
+  if (input) input.disabled = !!on;
+  if (execBtn) execBtn.disabled = !!on;
+}
 
+function paintGatewayReply(bodyText, metaLine) {
+  var body = document.getElementById('gateway-reply-body');
+  var meta = document.getElementById('gateway-reply-meta');
+  if (meta) meta.textContent = metaLine || '';
+  if (body) body.textContent = bodyText != null ? String(bodyText) : '';
+}
+
+/**
+ * ส่งข้อความไปยัง agent ที่เลือก (gateway ถ้ามี OpenClawAPI มิฉะนั้นโหมดจำลอง)
+ * @returns {Promise<void>}
+ */
+function runAgentCommand(text) {
+  var val = String(text || '').trim();
+  var agentId = OfficeRuntimeStore.getSelectedAgentId();
+  var p;
+
+  if (!val) {
+    return Promise.resolve();
+  }
+
+  function afterGateway(res) {
+    if (res.ok && res.text && String(res.text).trim()) {
+      paintGatewayReply(res.text, 'Gateway — agent: ' + agentId);
+    } else if (res.ok) {
+      paintGatewayReply(
+        '(ไม่มีข้อความใน body)',
+        'Gateway OK — agent: ' + agentId + ' (ตรวจรูปแบบ /v1/responses)'
+      );
+    } else {
+      paintGatewayReply(
+        res.text || '',
+        'Gateway ล้มเหลว — ' + (res.reason || 'error') + (res.status != null ? ' HTTP ' + res.status : '')
+      );
+    }
+  }
+
+  if (typeof OpenClawAPI !== 'undefined' && OpenClawAPI.sendAgentPrompt) {
+    setCommandBusy(true);
+    paintGatewayReply('…', 'กำลังเรียก gateway…');
+    p = OpenClawAPI.sendAgentPrompt(agentId, val)
+      .then(function (res) {
+        afterGateway(res);
+        if (res.ok) {
+          OfficeRuntimeStore.submitTask({
+            sourceType: 'web-ui',
+            sourceLabel: 'OpenClaw gateway',
+            command: val,
+            requestedAgentId: agentId,
+            metadata: {
+              gatewaySummary: res.text && String(res.text).trim()
+                ? res.text
+                : '(Gateway ตอบกลับแล้วแต่ไม่มีข้อความ — ตรวจรูปแบบ /v1/responses)'
+            }
+          });
+          return;
+        }
+        if (res.reason === 'responses_disabled') {
+          OfficeRuntimeStore.addLog('SYSTEM', 'Gateway: ยังไม่เปิด HTTP /v1/responses — ใช้โหมดจำลองในเบราว์เซอร์');
+        } else if (res.reason === 'auth_failed') {
+          OfficeRuntimeStore.addLog('SYSTEM', 'Gateway: 401/403 — ตั้ง meta openclaw-gateway-token หรือ OPENCLAW_GATEWAY_TOKEN ที่ nginx');
+        } else if (res.reason === 'network') {
+          OfficeRuntimeStore.addLog('SYSTEM', 'Gateway: ต่อไม่ถึง — ตรวจ docker และ path /gateway/');
+        } else if (!res.ok) {
+          OfficeRuntimeStore.addLog('SYSTEM', 'Gateway: ' + (res.reason || 'error') + (res.text ? ' — ' + res.text : ''));
+        }
+        OfficeRuntimeStore.submitTask({
+          sourceType: 'web-ui',
+          sourceLabel: 'Command panel',
+          command: val,
+          requestedAgentId: agentId
+        });
+      })
+      .catch(function (err) {
+        paintGatewayReply(String(err && err.message ? err.message : err), 'ข้อผิดพลาด');
+        OfficeRuntimeStore.addLog('SYSTEM', 'Gateway: ' + (err && err.message ? err.message : String(err)));
+        try {
+          OfficeRuntimeStore.submitTask({
+            sourceType: 'web-ui',
+            sourceLabel: 'Command panel',
+            command: val,
+            requestedAgentId: agentId
+          });
+        } catch (e2) { /* ignore */ }
+      })
+      .finally(function () {
+        setCommandBusy(false);
+      });
+    return p;
+  }
+
+  paintGatewayReply('', 'โหมดจำลองในเบราว์เซอร์ (ไม่มี OpenClawAPI.sendAgentPrompt)');
   OfficeRuntimeStore.submitTask({
     sourceType: 'web-ui',
     sourceLabel: 'Command panel',
     command: val,
-    requestedAgentId: OfficeRuntimeStore.getSelectedAgentId()
+    requestedAgentId: agentId
   });
+  return Promise.resolve();
+}
 
+function sendCommand() {
+  var input = document.getElementById('cmd-in');
+  var val = (input && input.value || '').trim();
+  if (!val) return;
   input.value = '';
+  runAgentCommand(val);
+}
+
+/** ปุ่มลัด — รันคำสั่งทันที */
+function runQuickCommand(text) {
+  return runAgentCommand(text);
 }
 
 /* ─── Modal ─── */
@@ -182,10 +306,21 @@ function setModalMode(mode) {
   document.getElementById('deploy-btn').textContent = mode === 'edit' ? 'SAVE CHANGES' : 'DEPLOY AGENT';
 }
 
+function syncTelegramHint(channelValue) {
+  var el = document.getElementById('m-telegram-hint');
+  if (!el) return;
+  if (channelValue === 'Telegram') {
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function openCreateModal() {
   editingAgentId = null;
   setModalMode('create');
   resetModalFields();
+  syncTelegramHint(document.getElementById('m-ch').value);
   showModal();
 }
 
@@ -203,6 +338,7 @@ function openEditModal(agentId) {
   document.getElementById('m-ai-model').value = agent.ai.model;
   document.getElementById('m-ai-api-env').value = agent.ai.apiKeyEnv;
   OfficeRuntimeStore.addLog('CONFIG', 'Editing AI config for ' + agent.name);
+  syncTelegramHint(document.getElementById('m-ch').value);
   showModal();
 }
 
@@ -324,6 +460,9 @@ window.addEventListener('DOMContentLoaded', function () {
     if (typeof OpenClawAPI !== 'undefined' && OpenClawAPI.setRuntimeStore) {
       OpenClawAPI.setRuntimeStore(OfficeRuntimeStore);
     }
+    if (typeof OpenClawAPI !== 'undefined' && OpenClawAPI.initGatewayUi) {
+      OpenClawAPI.initGatewayUi();
+    }
   });
 
   document.getElementById('open-modal-btn').addEventListener('click', openCreateModal);
@@ -333,6 +472,11 @@ window.addEventListener('DOMContentLoaded', function () {
   document.getElementById('m-ai-provider').addEventListener('change', function () {
     document.getElementById('m-ai-api-env').value = defaultApiKeyEnv(this.value);
   });
+
+  document.getElementById('m-ch').addEventListener('change', function () {
+    syncTelegramHint(this.value);
+  });
+  syncTelegramHint(document.getElementById('m-ch').value);
 
   document.getElementById('overlay').addEventListener('click', function (e) {
     if (e.target === this) hideModal();

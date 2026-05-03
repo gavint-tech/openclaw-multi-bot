@@ -283,6 +283,53 @@ body {
   transition: background 0.15s, border-color 0.15s;
 }
 .term-send:hover { background: #1a3a5c; border-color: #4fc3f7; }
+.term-send:disabled,
+.qbtn:disabled,
+.term-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.gateway-reply {
+  margin-top: 8px;
+  border: 1px solid #1e3a5f;
+  background: #060f1c;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 140px;
+}
+.gateway-reply-title {
+  font-size: 7px;
+  color: #2e6b9e;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 5px 8px 2px;
+  border-bottom: 1px solid #132338;
+}
+.gateway-reply-meta {
+  font-size: 7px;
+  color: #78909c;
+  padding: 3px 8px;
+  border-bottom: 1px solid #132338;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gateway-reply-body {
+  margin: 0;
+  padding: 6px 8px 8px;
+  font-size: 8px;
+  line-height: 1.35;
+  color: #b0d4e8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  max-height: 96px;
+}
 
 .log-section { border-top: 1px solid #1e3a5f; padding: 7px 10px; }
 .log-title { font-size: 8px; color: #2e6b9e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px; }
@@ -345,3 +392,31 @@ body {
   transition: background 0.15s;
 }
 .m-add:hover { background: #1a7ed8; }
+
+.m-hint {
+  font-size: 8px;
+  line-height: 1.45;
+  color: #8ab4d6;
+  background: #060f1c;
+  border: 1px dashed #2e6b9e;
+  padding: 8px 10px;
+  border-radius: 2px;
+}
+
+.gateway-pill {
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border: 1px solid #1e3a5f;
+  border-radius: 2px;
+  color: #4a7fa0;
+}
+.gateway-pill-ok { border-color: #2e7d32; color: #81c784; }
+.gateway-pill-off { border-color: #5d4037; color: #bcaaa4; }
+.gateway-pill-warn { border-color: #f9a825; color: #ffe082; }
+
+.ch-status { font-size: 7px; letter-spacing: 0.06em; }
+.ch-cli { color: #ffab91; }
+.ch-config { color: #90caf9; }
+.ch-local { color: #a5d6a7; }
+.ch-ui { color: #78909c; }
