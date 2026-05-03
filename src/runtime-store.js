@@ -205,7 +205,11 @@ var OfficeRuntimeStore = (function () {
     agent.tasks += 1;
     agent.msg += 1;
 
-    summary = 'Executed via ' + task.sourceType + ' [' + agent.ai.provider + '/' + agent.ai.model + ']: ' + task.command;
+    if (task.metadata && task.metadata.gatewaySummary) {
+      summary = String(task.metadata.gatewaySummary);
+    } else {
+      summary = 'Executed via ' + task.sourceType + ' [' + agent.ai.provider + '/' + agent.ai.model + ']: ' + task.command;
+    }
     _transitionRun(run, 'completed', summary);
 
     _state.runs.unshift(run);

@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- local dev: ใส่ Bearer token ให้ตรงกับ gateway (Railway ใส่ที่ nginx แทนได้) -->
+  <meta name="openclaw-gateway-token" content="" />
   <title>OpenClaw Office</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -19,6 +21,7 @@
     </div>
     <div class="topbar-right">
       <div class="topbar-stat"><div class="dot-blink"></div><span>DOCKER RUNNING</span></div>
+      <span class="gateway-pill gateway-pill-off" id="gateway-pill" title="HTTP /gateway/health">GATEWAY: …</span>
       <div class="topbar-time" id="clock">TIME: --:-- --</div>
     </div>
   </div>
@@ -100,16 +103,21 @@
       <div class="terminal">
         <div class="term-title">Command</div>
         <div class="quick-list">
-          <button class="qbtn" onclick="fillCmd('status report all agents')">status report all agents</button>
-          <button class="qbtn" onclick="fillCmd('restart gateway container')">restart gateway container</button>
-          <button class="qbtn" onclick="fillCmd('show today task summary')">show today task summary</button>
+          <button type="button" class="qbtn" onclick="runQuickCommand('status report all agents')">status report all agents</button>
+          <button type="button" class="qbtn" onclick="runQuickCommand('restart gateway container')">restart gateway container</button>
+          <button type="button" class="qbtn" onclick="runQuickCommand('show today task summary')">show today task summary</button>
         </div>
         <div class="term-input-wrap">
           <span class="term-prompt">$&gt;</span>
           <input class="term-input" id="cmd-in" type="text" placeholder="type command..."
             onkeydown="if(event.key==='Enter') sendCommand()" />
         </div>
-        <button class="term-send" onclick="sendCommand()">[ EXECUTE ]</button>
+        <button type="button" class="term-send" onclick="sendCommand()">[ EXECUTE ]</button>
+        <div class="gateway-reply" id="gateway-reply-wrap">
+          <div class="gateway-reply-title">Gateway reply</div>
+          <div class="gateway-reply-meta" id="gateway-reply-meta"></div>
+          <pre class="gateway-reply-body" id="gateway-reply-body"></pre>
+        </div>
       </div>
       <div class="log-section">
         <div class="log-title">Recent</div>
@@ -135,6 +143,11 @@
             <option>Telegram</option><option>Slack</option><option>Discord</option>
             <option>WhatsApp</option><option>LINE</option>
           </select>
+        </div>
+        <div class="m-hint" id="m-telegram-hint" style="display:none">
+          Telegram ผูกบอทจริงไม่ได้จากหน้านี้ — รันที่เครื่อง/เซิร์ฟเวอร์ที่มี OpenClaw CLI เช่น
+          <code style="font-size:9px">docker compose run --rm openclaw-cli agents bind --agent &lt;id&gt; --bind telegram:&lt;TOKEN&gt;</code>
+          แล้วให้ <code style="font-size:9px">id</code> ใน gateway ตรงกับ agent id ใน UI (เช่น gm, w1)
         </div>
         <div class="mfield"><label>AI provider</label>
           <select id="m-ai-provider">

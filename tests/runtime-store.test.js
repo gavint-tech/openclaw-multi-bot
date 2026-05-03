@@ -58,6 +58,17 @@ test('submitTask creates a completed run with lifecycle history', function () {
   assert.equal(OfficeRuntimeStore.getAgent('gm').tasks, 1);
 });
 
+test('submitTask prefers gatewaySummary from metadata when set', function () {
+  freshStore();
+  var run = OfficeRuntimeStore.submitTask({
+    sourceType: 'web-ui',
+    command: 'ping',
+    requestedAgentId: 'gm',
+    metadata: { gatewaySummary: 'PONG from real gateway' }
+  });
+  assert.equal(run.summary, 'PONG from real gateway');
+});
+
 test('addAgent extends runtime config and agent map', function () {
   freshStore();
   OfficeRuntimeStore.addAgent(TeamConfig.createAgentConfig({
